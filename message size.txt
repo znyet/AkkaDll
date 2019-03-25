@@ -15,3 +15,13 @@ akka {
       }
     }
   }
+  
+  
+  
+  
+  akka {
+    dot-netty.tcp {
+        # Maximum frame size: 4 MB
+        maximum-frame-size = 4000000b
+    }
+}
