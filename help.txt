@@ -1,0 +1,22 @@
+https://getakka.net/
+
+https://github.com/akkadotnet/akka.net
+
+https://www.cnblogs.com/heyixiaoran/p/9935563.html
+
+======================================================
+
+https://blog.csdn.net/shizhen_2012/article/details/77600890
+
+https://www.cnblogs.com/heyixiaoran/p/9935563.html
+
+======================================================
+
+Akka - 核心 Actor 库
+Akka.Remote - 跨节点 Actor 部署/通信
+Akka.Cluster - 弹性 Actor 网络(HA)
+Akka.Persistence - 事件源, 持久化 Actor 状态 & 恢复
+Akka.Streams - 流式工作流
+Akka.Cluster.Tools - 集群单例, 分布式发布/订阅
+Akka.Cluster.Sharding - 持久化状态分区
+Akka.DData - 最终一直的数据复制
