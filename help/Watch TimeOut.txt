@@ -1,0 +1,67 @@
+var config = ConfigurationFactory.ParseString(@"
+akka { 
+    actor {
+        provider = ""Akka.Remote.RemoteActorRefProvider,Akka.Remote""
+    }
+    remote {
+        dot-netty.tcp {
+            port = 8081
+            hostname = 0.0.0.0
+            public-hostname = 192.168.1.233
+            message-frame-size =  30000000b
+            send-buffer-size =  30000000b
+            receive-buffer-size =  30000000b
+            maximum-frame-size = 30000000b
+        }
+        watch-failure-detector {
+            acceptable-heartbeat-pause = 0 s
+        }
+    }
+
+}
+");
+
+
+=================================================================
+heartbeat-interval = 1 s
+#应多久向每个连接发送一次保持活动的心跳消息。
+心跳间隔=1秒
+
+threshold = 10.0
+#定义故障检测器阈值。
+#低阈值容易产生许多错误的怀疑，但可以确保
+#在发生真正碰撞时的快速检测。相反，高
+#阈值产生的错误更少，但需要更多的时间来检测
+#实际崩溃。
+阈值=10.0
+
+max-sample-size = 200
+#自适应的心跳间到达时间样本数
+#计算连接的失败超时。
+最大样本量=200
+
+min-std-deviation = 100 ms
+#用于正态分布的最小标准差
+#应计加速度检测器。标准偏差过低可能导致
+#对心跳突然但正常的偏差过于敏感
+#到达时间。
+最小标准偏差=100 ms
+
+acceptable-heartbeat-pause = 10 s
+#可能丢失/延迟的心跳数
+#在将其视为异常之前接受。
+#这一差距对于能够在突然、偶然的情况下生存是很重要的，
+#由于垃圾收集或
+网络下降。
+可接受心跳暂停=10秒
+
+unreachable-nodes-reaper-interval = 1s
+#检查故障标记为不可访问的节点的频率
+γ探测器
+无法到达的节点收割器间隔=1秒
+
+expected-response-after = 1 s
+#在发送心跳请求后，第一个故障检测
+#会在这段时间后开始，即使没有心跳
+#已收到。
+之后的预期响应=1秒
