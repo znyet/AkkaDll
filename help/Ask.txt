@@ -1,0 +1,21 @@
+1、Server
+Receive<string>(msg =>
+{
+	Console.WriteLine("收到字符串消息：" + msg);
+
+	Thread.Sleep(5000);
+
+	Sender.Tell("ok啦");
+});
+
+
+2、Client
+try
+{
+	string data = _server.Ask<string>("你好呢111111111", TimeSpan.FromSeconds(6)).Result;
+	Console.WriteLine(data + "呵呵呵呵");
+}
+catch
+{
+	_server.Tell("不行超时了");
+}
