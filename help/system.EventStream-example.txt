@@ -1,0 +1,51 @@
+ActorSystem system = ActorSystem.Create("MyClient", config); //root
+IActorRef eventActorRef = system.ActorOf(Props.Create<EventActor>());
+system.EventStream.Subscribe<DeadLetter>(eventActorRef);
+system.EventStream.Subscribe<AssociatedEvent>(eventActorRef);
+system.EventStream.Subscribe<AssociationErrorEvent>(eventActorRef);
+system.EventStream.Subscribe<DisassociatedEvent>(eventActorRef);
+system.EventStream.Subscribe<RemotingListenEvent>(eventActorRef);
+system.EventStream.Subscribe<RemotingShutdownEvent>(eventActorRef);
+system.EventStream.Subscribe<RemotingErrorEvent>(eventActorRef);
+
+==================================================================================
+class EventActor : ReceiveActor
+{
+	public EventActor()
+	{
+		Receive<DeadLetter>(msg =>
+		{
+			Console.WriteLine("=====> DeadLetter");
+		});
+
+		Receive<AssociatedEvent>(msg =>  //一般用到这个
+		{
+			Console.WriteLine("=====> AssociatedEvent 链接成功建立事件");
+		});
+
+		Receive<AssociationErrorEvent>(msg =>
+		{
+			Console.WriteLine("=====> AssociationErrorEvent 链接相关错误事件");
+		});
+
+		Receive<DisassociatedEvent>(msg => //一般用到这个
+		{
+			Console.WriteLine("=====> DisassociatedEvent 链接结束事件");
+		});
+
+		Receive<RemotingListenEvent>(msg =>
+		{
+			Console.WriteLine("=====> RemotingListenEvent 远程子系统准备好接受链接时的事件");
+		});
+
+		Receive<RemotingShutdownEvent>(msg =>
+		{
+			Console.WriteLine("=====> RemotingShutdownEvent 远程子系统被关闭的事件");
+		});
+
+		Receive<RemotingErrorEvent>(msg =>
+		{
+			Console.WriteLine("=====> RemotingErrorEvent 远程相关的所有错误");
+		});
+	}
+}
