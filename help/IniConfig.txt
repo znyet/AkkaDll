@@ -1,0 +1,414 @@
+一、Server
+
+1、iniconfig
+
+akka { 
+    #actor.debug.unhandled = on
+    loggers = ["Akka.Logger.NLog.NLogLogger, Akka.Logger.NLog"]
+    stdout-loglevel = DEBUG
+    loglevel = DEBUG
+    log-config-on-start = on   
+    actor {
+        provider = "Akka.Remote.RemoteActorRefProvider, Akka.Remote"
+    }
+    remote {
+        dot-netty.tcp {
+            port = 8123
+		    hostname = 0.0.0.0
+            public-hostname = 192.168.1.233
+            message-frame-size = 30000000b
+            send-buffer-size = 30000000b
+            receive-buffer-size = 30000000b
+            maximum-frame-size = 30000000b
+            connection-timeout = 2s
+        }
+        transport-failure-detector {
+            #heartbeat-interval = 4 s
+            #acceptable-heartbeat-pause = 1 s
+        }
+        watch-failure-detector {
+            #heartbeat-interval = 2 s
+            #acceptable-heartbeat-pause = 0 s
+        }
+    }
+
+}
+
+2、Program.cs
+namespace TestAkka.Remote.Server
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+
+            string configIni = System.IO.File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "Config.ini");
+            var config = ConfigurationFactory.ParseString(configIni);
+
+            ActorSystem system = ActorSystem.Create("MyServer", config);
+            IActorRef chatServer = system.ActorOf(Props.Create(() => new ChatServerActor()), "ChatServer");
+
+            IActorRef eventActorRef = system.ActorOf(Props.Create<EventActor>());
+            system.EventStream.Subscribe<DeadLetter>(eventActorRef);
+            system.EventStream.Subscribe<AssociatedEvent>(eventActorRef);
+            system.EventStream.Subscribe<AssociationErrorEvent>(eventActorRef);
+            system.EventStream.Subscribe<DisassociatedEvent>(eventActorRef);
+            system.EventStream.Subscribe<RemotingListenEvent>(eventActorRef);
+            system.EventStream.Subscribe<RemotingShutdownEvent>(eventActorRef);
+            system.EventStream.Subscribe<RemotingErrorEvent>(eventActorRef);
+
+
+            Console.ReadLine();
+        }
+    }
+
+
+    class ChatServerActor : ReceiveActor, ILogReceive
+    {
+        public static List<IActorRef> dict = new List<IActorRef>();
+        public static List<string> dict2 = new List<string>();
+
+        private readonly ILoggingAdapter _log = Logging.GetLogger(Context);
+
+        public ChatServerActor()
+        {
+
+            Receive<ConnectRequest>(message =>
+            {
+                
+                //dict.Add(Sender);
+                //dict2.Add(Sender.Path.ToString());
+                //Context.Watch(Sender);
+                //Console.WriteLine(dict.Count);
+
+                Console.WriteLine("one clinet in " + message.Name);
+                var msg = new MyMessage() { Name = "你好欢迎来到服务器 " + message.Name };
+
+                Sender.Tell(msg);
+
+                Sender.Tell(new ConnectRequest() { Name = "ok" });
+
+                Console.WriteLine("有人连接了服务器");
+
+                Console.WriteLine(Sender.Path);
+                //Console.WriteLine(Context.GetChildren().Count());
+
+                _log.Info("你们");
+
+                throw new Exception("aaaaaaaaaaaa");
+
+            });
+
+
+            Receive<ByteMessage>(msg =>
+            {
+                byte[] data = msg.Data;
+                Console.WriteLine(Encoding.UTF8.GetString(data));
+                Console.WriteLine(Sender.Path);
+            });
+
+
+            Receive<MyMessage>(msg =>
+            {
+                Console.WriteLine(msg.Name);
+                Console.WriteLine(Sender.Path);
+                //Console.WriteLine(Sender.Path);
+                //Console.WriteLine(Sender.Equals(Self));
+            });
+
+            Receive<string>(msg =>
+            {
+                Console.WriteLine("收到字符串消息：" + msg);
+                Sender.Tell("ok啦");
+                Console.WriteLine(Sender.Path);
+            });
+
+            Receive<byte[]>(msg =>
+            {
+                Console.WriteLine("我收到了byte[] ：" + msg.Length);
+                Console.WriteLine(msg[3]);
+
+                var act = Context.ActorSelection(Sender.Path);
+                act.Tell("11111111111111");
+
+                var act2 = Context.ActorSelection(Sender.Path.ToString());
+                act2.Tell("22222222222222");
+
+                Console.WriteLine(Sender.Path);
+
+            });
+
+
+            Receive<Terminated>(msg =>
+            {
+                Console.WriteLine("有东西掉线了");
+                Context.Unwatch(msg.ActorRef);
+                Context.Stop(msg.ActorRef);
+                dict.Remove(msg.ActorRef);
+                Console.WriteLine(dict.Count);
+            });
+
+            Receive<ReceiveTimeout>(msg =>
+            {
+                Console.WriteLine("超时");
+            });
+
+        }
+
+    }
+
+
+    class EventActor : ReceiveActor
+    {
+        public EventActor()
+        {
+            Receive<DeadLetter>(msg =>
+            {
+                Console.WriteLine("=====> DeadLetter");
+                Console.WriteLine(Sender.Path);
+            });
+
+
+            Receive<AssociatedEvent>(msg =>  //一般用到这个
+            {
+                Console.WriteLine("=====> AssociatedEvent 链接成功建立事件");
+                Console.WriteLine(Sender.Path.Name);
+                Console.WriteLine(Sender.Path.ToString());
+            });
+
+            Receive<AssociationErrorEvent>(msg =>
+            {
+                Console.WriteLine("=====> AssociationErrorEvent 链接相关错误事件");
+            });
+
+            Receive<DisassociatedEvent>(msg => //一般用到这个
+            {
+                Console.WriteLine("=====> DisassociatedEvent 链接结束事件");
+                Console.WriteLine(Sender.Path.Name);
+                Console.WriteLine(Sender.Path.ToString());
+            });
+
+            Receive<RemotingListenEvent>(msg =>
+            {
+                Console.WriteLine("=====> RemotingListenEvent 远程子系统准备好接受链接时的事件");
+            });
+
+            Receive<RemotingShutdownEvent>(msg =>
+            {
+                Console.WriteLine("=====> RemotingShutdownEvent 远程子系统被关闭的事件");
+            });
+
+            Receive<RemotingErrorEvent>(msg =>
+            {
+                Console.WriteLine("=====> RemotingErrorEvent 远程相关的所有错误");
+            });
+        }
+    }
+
+
+}
+
+
+==========================================================================================
+二、Client
+
+1、iniconfig
+
+akka {
+    #actor.debug.unhandled = on
+    loggers = ["Akka.Logger.NLog.NLogLogger, Akka.Logger.NLog"]
+    stdout-loglevel = DEBUG
+    loglevel = DEBUG
+    log-config-on-start = on   
+    actor {
+        provider = "Akka.Remote.RemoteActorRefProvider, Akka.Remote"
+    }
+    remote {
+        dot-netty.tcp {
+		    port = 0
+		    hostname = localhost
+            message-frame-size = 30000000b
+            send-buffer-size = 30000000b
+            receive-buffer-size = 30000000b
+            maximum-frame-size = 30000000b
+            connection-timeout = 2s
+        }
+        transport-failure-detector {
+            #heartbeat-interval = 4 s
+            #acceptable-heartbeat-pause = 1 s
+        }
+        watch-failure-detector {
+            #heartbeat-interval = 2 s
+            #acceptable-heartbeat-pause = 0 s
+        }
+    }
+}
+
+2、Program.cs
+
+namespace TestAkka.Remote.Client
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+
+            string configIni = System.IO.File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "Config.ini");
+            var config = ConfigurationFactory.ParseString(configIni);
+
+            ActorSystem system = ActorSystem.Create("MyClient", config); //root
+
+            var server = system.ActorSelection(ChatClientActor.Url); //添加新的服务地址
+
+
+            IActorRef chatClient = system.ActorOf<ChatClientActor>("5c05d258dc59f117d88b6eb9"); //创建新的actor
+
+
+            server.Tell(new ConnectRequest()
+            {
+                Name = "李四" + DateTime.Now.ToString()
+            }, chatClient);
+
+
+            system.EventStream.Subscribe<AssociatedEvent>(chatClient);
+            system.EventStream.Subscribe<DisassociatedEvent>(chatClient);
+            system.EventStream.Subscribe<RemotingErrorEvent>(chatClient);
+
+            Console.ReadKey();
+
+        }
+
+
+        class ChatClientActor : ReceiveActor, ILogReceive
+        {
+            public static string Url = "akka.tcp://MyServer@192.168.11.233:8123/user/ChatServer";
+            //public static string Url = "akka.tcp://MyServer@0.0.0.0:8123/user/ChatServer";
+            //public static string Url = "akka.tcp://MyServer@121.201.35.68:8123/user/ChatServer";
+
+            static List<IActorRef> dict = new List<IActorRef>();
+
+            public readonly ActorSelection _server = Context.ActorSelection(Url);
+
+
+            public ChatClientActor()
+            {
+                Receive<ConnectRequest>(msg =>
+                {
+                    //Context.Watch(Sender);
+                    Console.WriteLine("服务器握手成功");
+                    Console.WriteLine(Sender.Path);
+                });
+
+                _server.Tell(new ByteMessage()
+                {
+                    Data = Encoding.UTF8.GetBytes("通过system3")
+                }, Self);
+
+                _server.Tell("我居然直接发送了字符串");
+
+                _server.Tell(new byte[4] { 1, 2, 3, 4 }, Self);
+
+                Receive<MyMessage>(message =>
+                {
+                    Console.WriteLine(message.Name);
+                    Console.WriteLine(Sender.Path);
+
+                    Sender.Tell(new MyMessage() { Name = "MyMessage" });
+                });
+
+
+                Receive<Terminated>(msg =>
+                {
+                    dict.Remove(msg.ActorRef);
+                    Context.Unwatch(msg.ActorRef);
+                    Console.WriteLine("服务器断开了连接");
+                });
+
+                Receive<string>(msg =>
+                {
+                    Console.WriteLine("居然收到string:" + msg);
+                    Console.WriteLine(Sender.Path);
+
+                });
+
+                Receive<long>(msg =>
+                {
+                    Sender.Tell(5000L);
+                    Console.WriteLine(Sender.Path);
+                });
+
+
+                Receive<AssociatedEvent>(msg =>  //一般用到这个
+                {
+                    Console.WriteLine("=====> AssociatedEvent 链接成功建立事件");
+                    Console.WriteLine(Sender.Path.Name);
+                    Console.WriteLine(Sender.Path.ToString());
+                });
+
+                Receive<DisassociatedEvent>(msg => //一般用到这个
+                {
+                    Console.WriteLine("=====> DisassociatedEvent 链接结束事件");
+                    Console.WriteLine(Sender.Path.Name);
+                    Console.WriteLine(Sender.Path.ToString());
+                });
+
+                Receive<RemotingErrorEvent>(msg =>
+                {
+                    Console.WriteLine("=====> RemotingErrorEvent 远程相关的所有错误");
+                });
+
+            }
+
+        }
+
+
+        class EventActor : ReceiveActor
+        {
+            public EventActor()
+            {
+                Receive<DeadLetter>(msg =>
+                {
+                    Console.WriteLine("=====> DeadLetter");
+                });
+
+                Receive<AssociatedEvent>(msg =>  //一般用到这个
+                {
+                    Console.WriteLine("=====> AssociatedEvent 链接成功建立事件");
+                    Console.WriteLine(Sender.Path.Name);
+                    Console.WriteLine(Sender.Path.ToString());
+                });
+
+                Receive<AssociationErrorEvent>(msg =>
+                {
+                    Console.WriteLine("=====> AssociationErrorEvent 链接相关错误事件");
+                });
+
+                Receive<DisassociatedEvent>(msg => //一般用到这个
+                {
+                    Console.WriteLine("=====> DisassociatedEvent 链接结束事件");
+                    Console.WriteLine(Sender.Path.Name);
+                    Console.WriteLine(Sender.Path.ToString());
+
+                });
+
+                Receive<RemotingListenEvent>(msg =>
+                {
+                    Console.WriteLine("=====> RemotingListenEvent 远程子系统准备好接受链接时的事件");
+                });
+
+                Receive<RemotingShutdownEvent>(msg =>
+                {
+                    Console.WriteLine("=====> RemotingShutdownEvent 远程子系统被关闭的事件");
+                });
+
+                Receive<RemotingErrorEvent>(msg =>
+                {
+                    Console.WriteLine("=====> RemotingErrorEvent 远程相关的所有错误");
+                });
+            }
+        }
+
+
+    }
+
+}
