@@ -1,0 +1,25 @@
+//第一种
+Timer t = new Timer(delegate 
+{
+	//context.CloseAsync();
+	//t.Dispose();;
+}, null, 2000, 1000);
+
+System.Threading.Timer t = new System.Threading.Timer((a) =>
+{
+
+}, null, 2000, 1000);//2秒后执行，每1秒执行一次
+
+
+
+//第二种
+System.Timers.Timer t2 = new System.Timers.Timer(1000);
+t2.AutoReset = true; //true重复执行  false执行一次
+t2.Enabled = true;
+t2.Elapsed += (sender, e) =>
+{
+
+};
+t2.Start();
+t2.Stop();
+t2.Dispose();

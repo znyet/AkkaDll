@@ -1,0 +1,127 @@
+public static void StartCmd(String workingDirectory, String command)
+{
+	Process p = new Process();
+	p.StartInfo.FileName = "cmd.exe";
+	p.StartInfo.WorkingDirectory = workingDirectory;
+	p.StartInfo.UseShellExecute = false;
+	p.StartInfo.RedirectStandardInput = true;
+	p.StartInfo.RedirectStandardOutput = true;
+	p.StartInfo.RedirectStandardError = true;
+	p.StartInfo.CreateNoWindow = true;
+	p.Start();
+	p.StandardInput.WriteLine(command);
+	p.StandardInput.WriteLine("exit");
+}
+
+
+public static string StartCmd(String workingDirectory, String command)
+{
+	Process p = new Process();
+	p.StartInfo.FileName = "cmd.exe";
+	p.StartInfo.WorkingDirectory = workingDirectory;
+	p.StartInfo.UseShellExecute = false;
+	p.StartInfo.RedirectStandardInput = true;
+	p.StartInfo.RedirectStandardOutput = true;
+	p.StartInfo.RedirectStandardError = true;
+	p.StartInfo.CreateNoWindow = true;
+	p.Start();
+	p.StandardInput.WriteLine(command);
+	p.StandardInput.WriteLine("exit");
+	p.StandardInput.AutoFlush=true;
+
+	 //获取输出信息
+	 string strOuput = p.StandardOutput.ReadToEnd();
+	 //等待程序执行完退出进程
+	 p.WaitForExit();
+	 p.Close();
+	 return strOuput;
+}
+
+
+
+================================================================================================================
+
+using System;
+using System.Diagnostics;
+ 
+namespace CMDHelper
+{
+    public class CMD
+    {
+        private static string CMDPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.System) + "\\cmd.exe";
+ 
+        public static void RunCMDCommand(string Command, out string OutPut)
+        {
+            using (Process pc = new Process())
+            {
+                Command = Command.Trim().TrimEnd('&') + "&exit";
+ 
+                pc.StartInfo.FileName = CMDPath;//网上很多直接用c:\win\system32\cmd的，没有考虑到用户系统可能不在C盘
+                pc.StartInfo.CreateNoWindow = true;//隐藏窗口运行
+                pc.StartInfo.RedirectStandardError = true;//重定向错误流
+                pc.StartInfo.RedirectStandardInput = true;//重定向输入流
+                pc.StartInfo.RedirectStandardOutput = true;//重定向输出流
+                pc.StartInfo.UseShellExecute = false;
+ 
+                pc.Start();
+ 
+                pc.StandardInput.WriteLine(Command);//输入CMD命令
+                pc.StandardInput.AutoFlush = true;
+ 
+                OutPut = pc.StandardOutput.ReadToEnd();//读取结果
+                pc.WaitForExit();
+                pc.Close();
+            }
+        }
+    }
+}
+
+
+-----------------------
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Diagnostics;
+ 
+namespace RHostsEditor.CMDHelper
+{
+    public class CMD
+    {
+        private static string CMDPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.System) + "\\cmd.exe";
+ 
+        public static void RunCMDCommand(string Command, out string OutPut, bool OnlyOutPutTesult = false)
+        {
+            using (Process pc = new Process())
+            {
+                Command = Command.Trim().TrimEnd('&') + "&exit";
+ 
+                pc.StartInfo.FileName = CMDPath;//网上很多直接用c:\win\system32\cmd的，没有考虑到用户系统可能不在C盘
+                pc.StartInfo.CreateNoWindow = true;//隐藏窗口运行
+                pc.StartInfo.RedirectStandardError = true;//重定向错误流
+                pc.StartInfo.RedirectStandardInput = true;//重定向输入流
+                pc.StartInfo.RedirectStandardOutput = true;//重定向输出流
+                pc.StartInfo.UseShellExecute = false;
+ 
+                pc.Start();
+ 
+                pc.StandardInput.WriteLine(Command);//输入CMD命令
+                pc.StandardInput.AutoFlush = true;
+ 
+                OutPut = pc.StandardOutput.ReadToEnd();//读取结果
+ 
+                if (OnlyOutPutTesult)
+                {
+                    int P = OutPut.IndexOf(Command) + Command.Length + 4;
+                    OutPut = OutPut.Substring(P, OutPut.Length - P - 3);
+                }
+ 
+                pc.WaitForExit();
+                pc.Close();
+            }
+        }
+    }
+}
+

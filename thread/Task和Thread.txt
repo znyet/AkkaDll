@@ -1,0 +1,32 @@
+//短时间运行
+var t = Task.Run(() =>
+{
+	Console.WriteLine("进入 线程" + Thread.CurrentThread.ManagedThreadId);
+});
+Task.WaitAll(t);
+
+
+//Task.Factory.StartNew 可以设置线程是长时间运行，这时线程池就不会等待这个线程回收
+Task.Factory.StartNew(() =>
+{
+      for (int i = 0; i < 100; i++)
+      {
+           var foo = 2;
+      }
+      Console.WriteLine("进行 线程" + Thread.CurrentThread.ManagedThreadId);
+	  
+}, TaskCreationOptions.LongRunning);
+
+
+//这样就和Task.Run一样了
+Task.Factory.StartNew(foo, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+
+
+
+============================================
+
+new Thread(() =>
+{
+
+})
+{ IsBackground = true }.Start();
