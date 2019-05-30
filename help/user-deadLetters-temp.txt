@@ -1,0 +1,44 @@
+using System;
+using Akka.Actor;
+using Akka.Configuration;
+
+namespace AkkaClient
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            string configIni = System.IO.File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "Config.ini");
+            var config = ConfigurationFactory.ParseString(configIni);
+
+            ActorSystem system = ActorSystem.Create("client", config);
+
+            IActorRef actor = system.ActorOf(Props.Create(() => new ChatServerActor()), "actor1");
+
+            const string serverUrl = "akka.tcp://server@localhost:2552/user/actor1"; //服务器地址
+
+            system.ActorSelection(serverUrl).Tell(1, actor); //akka.tcp://client@localhost:2553/user/actor1
+            system.ActorSelection(serverUrl).Tell(1); //akka://server/deadLetters
+            system.ActorSelection(serverUrl).Ask(1, TimeSpan.FromSeconds(1)); //akka.tcp://client@localhost:2553/temp/d
+            
+            
+            Console.ReadKey();
+        }
+
+        internal class ChatServerActor : ReceiveActor, ILogReceive
+        {
+            public ChatServerActor()
+            {
+
+                Receive<int>(msg =>  //接收到int消息
+                {
+                    Console.WriteLine(Sender.Path.ToString());
+                 
+                });
+
+
+              
+            }
+        }
+    }
+}
