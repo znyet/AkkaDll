@@ -8,6 +8,7 @@ akka {
     actor {
         provider = "Akka.Remote.RemoteActorRefProvider, Akka.Remote"
 		serializers {
+			#aa = " Akka.MySerializer.Proto, Akka.MySerializer"
 			aa = " Akka.MySerializer.MsgPack, Akka.MySerializer"
 		}
 		serialization-bindings {
