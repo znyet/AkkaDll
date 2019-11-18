@@ -9,7 +9,8 @@ akka {
         provider = "Akka.Remote.RemoteActorRefProvider, Akka.Remote"
 		serializers {
 			#aa = " Akka.MySerializer.Proto, Akka.MySerializer"
-			aa = " Akka.MySerializer.MsgPack, Akka.MySerializer"
+			#aa = " Akka.MySerializer.MsgPack, Akka.MySerializer"
+			aa = " Akka.MySerializer.MsgPackLz4, Akka.MySerializer"
 		}
 		serialization-bindings {
 		  #"MyMessage.PayOkMessage, MyMessage" = aa
