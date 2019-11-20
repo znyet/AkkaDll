@@ -1,0 +1,4 @@
+CompositeResolver.RegisterAndSetAsDefault(
+	NativeDateTimeResolver.Instance,
+	StandardResolver.Instance
+);
